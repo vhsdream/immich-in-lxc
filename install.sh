@@ -50,8 +50,10 @@ review_install_information () {
     echo $INSTALL_DIR
     # Upload Location
     echo $UPLOAD_DIR
-    # Cuda or CPU
+    # Cuda or No
     echo $isCUDA
+    # Openvino or No
+    echo $isOPENVINO
     # npm proxy
     echo $PROXY_NPM
     # poetry proxy
@@ -94,6 +96,8 @@ review_dependency () {
     fi
 
     # (Optional) Nvidia CuDNN
+    #
+    # Also need to have a check for certain OPENVINO dependencies - or add them to the dep scripts
 }
 
 review_dependency
@@ -241,7 +245,7 @@ install_immich_machine_learning () {
     export POETRY_PYPI_MIRROR_URL=$PROXY_POETRY
     pip3 install poetry -i $PROXY_POETRY
 
-    # Deal with python 3.12
+    # Deal with python 3.12 (this actually does not do anything)
     python3_version=$(python3 --version 2>&1 | awk -F' ' '{print $2}' | awk -F'.' '{print $2}')
     if [ $python3_version = 12 ]; then
         # Allow Python 3.12 (e.g., Ubuntu 24.04)
@@ -249,9 +253,11 @@ install_immich_machine_learning () {
         poetry update
     fi
 
-    # Install CUDA parts only when necessary
+    # Install CUDA or OPENVINO parts only when necessary
     if [ $isCUDA = true ]; then
         poetry install --no-root --with dev --with cuda
+    elif [ $isOPENVINO = true ]; then
+	poetry install --no-root --with dev --with openvino
     else
         poetry install --no-root --with dev --with cpu
     fi
