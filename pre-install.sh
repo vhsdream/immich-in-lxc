@@ -136,6 +136,7 @@ build_libjxl () {
     -DJPEGXL_ENABLE_PLUGINS=ON \
     -DJPEGLI_LIBJPEG_LIBRARY_SOVERSION="${JPEGLI_LIBJPEG_LIBRARY_SOVERSION}" \
     -DJPEGLI_LIBJPEG_LIBRARY_VERSION="${JPEGLI_LIBJPEG_LIBRARY_VERSION}" \
+    -DLIBJPEG_TURBO_VERSION_NUMBER=2001005 \
     ..
     # Move the following flag to above if one's system support AVX512
     # -DJPEGXL_ENABLE_AVX512=ON \
@@ -188,8 +189,8 @@ build_libheif () {
     cmake --preset=release-noplugins \
         -DWITH_DAV1D=ON \
         -DENABLE_PARALLEL_TILE_DECODING=ON \
-        -DENABLE_LIBSHARPYUV=ON \
-        -DENABLE_LIBDE265=ON \
+        -DWITH_LIBSHARPYUV=ON \
+        -DWITH_LIBDE265=ON \
         -DWITH_AOM_DECODER=OFF \
         -DWITH_AOM_ENCODER=OFF \
         -DWITH_X265=OFF \
