@@ -232,6 +232,9 @@ copy_build_lock
 # -------------------
 
 install_immich_machine_learning () {
+
+# here is where I could install Intel OpenVINO deps if that is what is chosen at install time.
+
     cd $INSTALL_DIR_src/machine-learning
     python3 -m venv $INSTALL_DIR_ml/venv
     (
