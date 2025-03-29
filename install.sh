@@ -241,32 +241,17 @@ install_immich_machine_learning () {
     # Initiate subshell to setup venv
     . $INSTALL_DIR_ml/venv/bin/activate
 
-    # Use pypi if proxy does not present
-    if [ -z "${PROXY_POETRY}" ]; then
-        PROXY_POETRY=https://pypi.org/simple/
-    fi
-    export POETRY_PYPI_MIRROR_URL=$PROXY_POETRY
-    pip3 install poetry -i $PROXY_POETRY
-
-    # Deal with python 3.12 (this actually does not do anything)
-    python3_version=$(python3 --version 2>&1 | awk -F' ' '{print $2}' | awk -F'.' '{print $2}')
-    if [ $python3_version = 12 ]; then
-        # Allow Python 3.12 (e.g., Ubuntu 24.04)
-        sed -i -e 's/<3.12/<4/g' pyproject.toml
-        poetry update
-    fi
+    pip3 install uv
 
     # Install CUDA or OPENVINO parts only when necessary
     if [ $isCUDA = true ]; then
-        poetry install --no-root --with dev --with cuda
+	uv sync --extra cuda --active
     elif [ $isOPENVINO = true ]; then
-	poetry install --no-root --with dev --with openvino
+	uv sync --extra openvino --active
     else
-        poetry install --no-root --with dev --with cpu
+	uv sync --extra cpu --active
     fi
 
-    # Work around for bad poetry config
-    pip install "numpy<2" -i $PROXY_POETRY
     )
     
     # Copy results
