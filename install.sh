@@ -376,6 +376,7 @@ cd $INSTALL_DIR_ml
 python -m immich_ml
 
 EOF
+  chmod +x "$INSTALL_DIR_ml/start.sh"
 }
 
 create_custom_start_script
