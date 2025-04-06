@@ -9,9 +9,9 @@ SCRIPT_DIR=$PWD
 
 create_install_env_file() {
   # Check if env file exists
-  if [ ! -f $SCRIPT_DIR/.env ]; then
+  if [ ! -f "$SCRIPT_DIR"/.env ]; then
     # If not, create a new one based on the template
-    if [ -f $SCRIPT_DIR/install.env ]; then
+    if [ -f "$SCRIPT_DIR"/install.env ]; then
       cp install.env .env
       echo "New .env file created from the template, exiting"
       exit 0
@@ -30,7 +30,7 @@ create_install_env_file
 
 load_environment_variables() {
   # Read the .env file into variables
-  cd $SCRIPT_DIR
+  cd "$SCRIPT_DIR"
   set -a
   . ./.env
   set +a
@@ -45,19 +45,19 @@ load_environment_variables
 set +x
 review_install_information() {
   # Install Version
-  echo $REPO_TAG
+  echo "$REPO_TAG"
   # Install Location
-  echo $INSTALL_DIR
+  echo "$INSTALL_DIR"
   # Upload Location
-  echo $UPLOAD_DIR
+  echo "$UPLOAD_DIR"
   # Cuda or No
-  echo $isCUDA
+  echo "$isCUDA"
   # Openvino or No
-  echo $isOPENVINO
+  echo "$isOPENVINO"
   # npm proxy
-  echo $PROXY_NPM
+  echo "$PROXY_NPM"
   # poetry proxy
-  echo $PROXY_POETRY
+  echo "$PROXY_POETRY"
 }
 
 review_install_information
@@ -88,7 +88,7 @@ review_dependency() {
   fi
 
   # (Optional) Nvidia Driver
-  if [ $isCUDA = true ]; then
+  if [ "$isCUDA" = true ]; then
     if ! nvidia-smi &>/dev/null; then
       echo "ERROR: Nvidia driver is not installed, and isCUDA is set to true"
       exit 1
@@ -119,7 +119,7 @@ REPO_URL="https://github.com/immich-app/immich"
 # -------------------
 
 clean_previous_build() {
-  rm -rf $INSTALL_DIR_app
+  rm -rf "$INSTALL_DIR_app"
 }
 
 clean_previous_build
@@ -130,21 +130,21 @@ clean_previous_build
 
 create_folders() {
   # No need to create source folder
-  mkdir -p $INSTALL_DIR_app
+  mkdir -p "$INSTALL_DIR_app"
 
   # Machine learning component
-  mkdir -p $INSTALL_DIR_ml
+  mkdir -p "$INSTALL_DIR_ml"
 
   # Upload directory
   if [ ! -d "$UPLOAD_DIR" ]; then
     echo "$UPLOAD_DIR does not exists, creating one"
-    mkdir -p $UPLOAD_DIR
+    mkdir -p "$UPLOAD_DIR"
   else
     echo "$UPLOAD_DIR already exists, skip creation"
   fi
 
   # GeoNames
-  mkdir -p $INSTALL_DIR_geo
+  mkdir -p "$INSTALL_DIR_geo"
 }
 
 create_folders
@@ -157,7 +157,7 @@ clone_the_repo() {
   if [ ! -d "$INSTALL_DIR_src" ]; then
     git clone "$REPO_URL" "$INSTALL_DIR_src" --single-branch
   else
-    cd $INSTALL_DIR_src
+    cd "$INSTALL_DIR_src"
     # REMOVE all the change one made to source repo, which is sth not supposed to happen
     git reset --hard main
     # In case one is not on the branch
@@ -165,7 +165,7 @@ clone_the_repo() {
     # Get updates
     git pull
     # Set the install version
-    git checkout $REPO_TAG
+    git checkout "$REPO_TAG"
   fi
 
 }
@@ -177,11 +177,11 @@ clone_the_repo
 # -------------------
 
 install_immich_web_server() {
-  cd $INSTALL_DIR_src
+  cd "$INSTALL_DIR_src"
 
   # Set mirror for npm
-  if [ ! -z "${PROXY_NPM}" ]; then
-    npm config set registry=$PROXY_NPM
+  if [ ! -z "$PROXY_NPM" ]; then
+    npm config set registry="$PROXY_NPM"
   fi
 
   cd server
@@ -201,15 +201,15 @@ install_immich_web_server() {
   cd ..
 
   # Unset mirror for npm
-  if [ ! -z "${PROXY_NPM}" ]; then
+  if [ ! -z "$PROXY_NPM" ]; then
     npm config delete registry
   fi
 
-  cp -a server/node_modules server/dist server/bin $INSTALL_DIR_app/
-  cp -a web/build $INSTALL_DIR_app/www
-  cp -a server/resources server/package.json server/package-lock.json $INSTALL_DIR_app/
-  cp -a server/start*.sh $INSTALL_DIR_app/
-  cp -a LICENSE $INSTALL_DIR_app/
+  cp -a server/node_modules server/dist server/bin "$INSTALL_DIR_app"/
+  cp -a web/build "$INSTALL_DIR_app"/www
+  cp -a server/resources server/package.json server/package-lock.json "$INSTALL_DIR_app"/
+  cp -a server/start*.sh "$INSTALL_DIR_app"/
+  cp -a LICENSE "$INSTALL_DIR_app"/
   cd ..
 }
 
@@ -221,8 +221,8 @@ install_immich_web_server
 
 copy_build_lock() {
   # So that immich would not complain
-  cd $SCRIPT_DIR
-  cp base-images/server/bin/build-lock.json $INSTALL_DIR_app/
+  cd "$SCRIPT_DIR"
+  cp base-images/server/bin/build-lock.json "$INSTALL_DIR_app"/
 }
 
 copy_build_lock
@@ -235,28 +235,28 @@ install_immich_machine_learning() {
 
   # here is where I could install Intel OpenVINO deps if that is what is chosen at install time.
 
-  cd $INSTALL_DIR_src/machine-learning
-  python3 -m venv $INSTALL_DIR_ml/venv
+  cd "$INSTALL_DIR_src"/machine-learning
+  python3 -m venv "$INSTALL_DIR_ml"/venv
   (
     # Initiate subshell to setup venv
-    . $INSTALL_DIR_ml/venv/bin/activate
+    . "$INSTALL_DIR_ml"/venv/bin/activate
 
     pip3 install uv
 
     # Install CUDA or OPENVINO parts only when necessary
-    if [ $isCUDA = true ]; then
-	uv sync --extra cuda --active
-    elif [ $isOPENVINO = true ]; then
-	uv sync --extra openvino --active
+    if [ "$isCUDA" = true ]; then
+      uv sync --extra cuda --active
+    elif [ "$isOPENVINO" = true ]; then
+      uv sync --extra openvino --active
     else
-	uv sync --extra cpu --active
+      uv sync --extra cpu --active
     fi
 
-    )
-    
-    # Copy results
-    cd $INSTALL_DIR_src
-    cp -a machine-learning/ann machine-learning/start.sh machine-learning/app $INSTALL_DIR_ml/
+  )
+
+  # Copy results
+  cd "$INSTALL_DIR_src"
+  cp -a machine-learning/ann machine-learning/immich_ml "$INSTALL_DIR_ml"/
 }
 
 install_immich_machine_learning
@@ -268,11 +268,10 @@ install_immich_machine_learning
 # Honestly, I do not understand what does this part of the script does.
 
 replace_usr_src() {
-  cd $INSTALL_DIR_app
-  grep -Rl /usr/src | xargs -n1 sed -i -e "s@/usr/src@$INSTALL_DIR@g"
-  ln -sf $INSTALL_DIR_app/resources $INSTALL_DIR/
-  mkdir -p $INSTALL_DIR/cache
-  sed -i -e "s@\"/cache\"@\"$INSTALL_DIR/cache\"@g" $INSTALL_DIR_ml/app/config.py
+  cd "$INSTALL_DIR_app"
+  grep -RlI /usr/src | xargs -n1 sed -i -e "s@/usr/src@$INSTALL_DIR@g"
+  ln -sf "$INSTALL_DIR_app"/resources "$INSTALL_DIR"/
+  mkdir -p "$INSTALL_DIR"/cache
   grep -RlE "\"/build\"|'/build'" | xargs -n1 sed -i -e "s@\"/build\"@\"$INSTALL_DIR_app\"@g" -e "s@'/build'@'$INSTALL_DIR_app'@g"
 }
 
@@ -283,23 +282,23 @@ replace_usr_src
 # -------------------
 
 install_sharp_and_cli() {
-  cd $INSTALL_DIR_app
+  cd "$INSTALL_DIR_app"
 
   # Set mirror for npm
-  if [ ! -z "${PROXY_NPM}" ]; then
-    npm config set registry=$PROXY_NPM
+  if [ ! -z "$PROXY_NPM" ]; then
+    npm config set registry="$PROXY_NPM"
   fi
 
   npm install --build-from-source sharp
 
   # Remove sharp dependency so that it use system library
-  rm -rf $INSTALL_DIR_app/node_modules/@img/sharp-libvips*
-  rm -rf $INSTALL_DIR_app/node_modules/@img/sharp-linuxmusl-x64
+  rm -rf "$INSTALL_DIR_app"/node_modules/@img/sharp-libvips*
+  rm -rf "$INSTALL_DIR_app"/node_modules/@img/sharp-linuxmusl-x64
 
   npm i -g @immich/cli
 
   # Unset mirror for npm
-  if [ ! -z "${PROXY_NPM}" ]; then
+  if [ ! -z "$PROXY_NPM" ]; then
     npm config delete registry
   fi
 }
@@ -311,8 +310,8 @@ install_sharp_and_cli
 # -------------------
 
 setup_upload_folder() {
-  ln -s $UPLOAD_DIR $INSTALL_DIR_app/upload
-  ln -s $UPLOAD_DIR $INSTALL_DIR_ml/upload
+  ln -s "$UPLOAD_DIR" "$INSTALL_DIR_app"/upload
+  ln -s "$UPLOAD_DIR" "$INSTALL_DIR_ml"/upload
 }
 
 setup_upload_folder
@@ -322,7 +321,7 @@ setup_upload_folder
 # -------------------
 
 download_geonames() {
-  cd $INSTALL_DIR_geo
+  cd "$INSTALL_DIR_geo"
   if [ ! -f "cities500.zip" ] || [ ! -f "admin1CodesASCII.txt" ] || [ ! -f "admin2Codes.txt" ] || [ ! -f "ne_10m_admin_0_countries.geojson" ]; then
     echo "incomplete geodata, start downloading"
     wget -o - https://download.geonames.org/export/dump/admin1CodesASCII.txt &
@@ -336,9 +335,9 @@ download_geonames() {
     echo "geodata exists, skip downloading"
   fi
 
-  cd $INSTALL_DIR
+  cd "$INSTALL_DIR"
   # Link the folder
-  ln -s $INSTALL_DIR_geo $INSTALL_DIR_app/
+  ln -s "$INSTALL_DIR_geo" "$INSTALL_DIR_app"/
 }
 
 download_geonames
@@ -365,7 +364,7 @@ EOF
 
   # Machine learning
   cat <<EOF >$INSTALL_DIR_ml/start.sh
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -a
 . $INSTALL_DIR/runtime.env
@@ -374,18 +373,8 @@ set +a
 cd $INSTALL_DIR_ml
 . venv/bin/activate
 
-: "\${MACHINE_LEARNING_HOST:=127.0.0.1}"
-: "\${MACHINE_LEARNING_PORT:=3003}"
-: "\${MACHINE_LEARNING_WORKERS:=1}"
-: "\${MACHINE_LEARNING_WORKER_TIMEOUT:=120}"
+python -m immich_ml
 
-exec gunicorn app.main:app \
-        -k app.config.CustomUvicornWorker \
-        -w "\$MACHINE_LEARNING_WORKERS" \
-        -b "\$MACHINE_LEARNING_HOST":"\$MACHINE_LEARNING_PORT" \
-        -t "\$MACHINE_LEARNING_WORKER_TIMEOUT" \
-        --log-config-json log_conf.json \
-        --graceful-timeout 0
 EOF
 }
 
@@ -396,12 +385,12 @@ create_custom_start_script
 # -------------------
 
 create_runtime_env_file() {
-  cd $INSTALL_DIR
+  cd "$INSTALL_DIR"
   # Check if env file exists
   if [ ! -f runtime.env ]; then
     # If not, create a new one based on the template
-    if [ -f $SCRIPT_DIR/runtime.env ]; then
-      cp $SCRIPT_DIR/runtime.env runtime.env
+    if [ -f "$SCRIPT_DIR"/runtime.env ]; then
+      cp "$SCRIPT_DIR"/runtime.env runtime.env
       echo "New runtime.env file created from the template, exiting"
     else
       echo "runtime.env not found, please clone the entire repo, exiting"
